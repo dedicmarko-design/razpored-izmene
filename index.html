@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Razpored izmen — obrati</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F4F0;
+    --card:#FFFFFF;
+    --ink:#20242C;
+    --muted:#6B7078;
+    --line:#E4E2DB;
+    --izmena1:#3E63AD;
+    --izmena1-soft:#EAF0FB;
+    --izmena2:#C96A2E;
+    --izmena2-soft:#FBEFE6;
+    --redno:#3B7350;
+    --redno-soft:#EAF3EC;
+    --bolniska:#B3261E;
+    --bolniska-soft:#FBEAEA;
+    --dopust:#92660A;
+    --dopust-soft:#FBF3E1;
+    --ure4:#5B5F66;
+    --ure4-soft:#EDEDEE;
+    --drugo:#514C7A;
+    --drugo-soft:#EFEDF6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* Header */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;margin-bottom:22px;
+  }
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .kicker{font-size:12.5px;color:var(--muted);letter-spacing:.02em;}
+  .brand h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em;}
+  .shared-note{font-size:12px;color:var(--muted);background:#F0EFE9;border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:320px;}
+
+  /* Plant tabs */
+  .plant-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  .plant-tab{
+    font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);
+    padding:8px 16px;border-radius:9px 9px 0 0;border-bottom:none;
+    position:relative;top:1px;
+  }
+  .plant-tab.active{color:var(--ink);background:var(--paper);border-bottom:1px solid var(--paper);}
+  .plant-tab-bar{border-bottom:2px solid var(--ink);}
+  .top-controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .date-field{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);}
+  .date-field input{
+    font-family:inherit;font-size:14px;color:var(--ink);
+    border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:var(--card);
+  }
+  .btn{
+    font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+    border-radius:8px;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);padding:9px 16px;transition:background .12s,border-color .12s;
+  }
+  .btn:hover{background:#F0EFEA;}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .btn.primary:hover{background:#333844;}
+  .btn.small{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+  .btn.ghost{border-color:transparent;background:transparent;color:var(--muted);}
+  .btn.ghost:hover{background:#EAE8E2;color:var(--ink);}
+
+  /* Summary strip */
+  .summary{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;
+    overflow:hidden;margin-bottom:26px;
+  }
+  .summary .cell{background:var(--card);padding:16px 18px;}
+  .summary .cell .num{font-size:30px;font-weight:800;line-height:1;}
+  .summary .cell .lbl{font-size:12.5px;color:var(--muted);margin-top:6px;}
+  .summary .cell.accent1 .num{color:var(--izmena1);}
+  .summary .cell.accent2 .num{color:var(--izmena2);}
+
+  /* Shift columns */
+  .shifts{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+  @media (max-width:860px){.shifts{grid-template-columns:1fr;}}
+
+  .shift-card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .shift-head{padding:16px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid;}
+  .shift-card.s1 .shift-head{border-color:var(--izmena1);}
+  .shift-card.s2 .shift-head{border-color:var(--izmena2);}
+  .shift-head .who h2{margin:0;font-size:16.5px;font-weight:700;}
+  .shift-head .who .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .shift-head .count{text-align:right;}
+  .shift-head .count .n{font-size:24px;font-weight:800;}
+  .shift-card.s1 .count .n{color:var(--izmena1);}
+  .shift-card.s2 .count .n{color:var(--izmena2);}
+  .shift-head .count .of{font-size:11.5px;color:var(--muted);}
+
+  .dept{padding:12px 18px;border-bottom:1px solid var(--line);}
+  .dept:last-child{border-bottom:none;}
+  .dept-title{
+    display:flex;justify-content:space-between;align-items:center;gap:6px;
+    font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--muted);margin-bottom:8px;
+  }
+  .dept-title .dn{color:var(--ink);font-weight:800;}
+  .dept-title-name{
+    flex:1;font-family:inherit;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    border:1px solid transparent;border-radius:5px;padding:2px 4px;background:transparent;color:var(--muted);min-width:0;
+  }
+  .dept-title-name:hover{border-color:var(--line);background:#FBFAF8;}
+  .dept-title-name:focus{outline:none;border-color:var(--ink);background:#fff;color:var(--ink);}
+  .add-dept-btn{
+    font-family:inherit;font-size:12.5px;font-weight:700;border:1px dashed var(--line);
+    background:transparent;color:var(--muted);border-radius:8px;padding:8px 14px;cursor:pointer;width:100%;margin-top:4px;
+  }
+  .add-dept-btn:hover{border-color:var(--ink);color:var(--ink);}
+
+  .worker-row{
+    display:flex;align-items:center;gap:8px;padding:6px 0;
+    border-bottom:1px dashed #EDEBE5;
+  }
+  .worker-row:last-of-type{border-bottom:none;}
+  .worker-name{
+    flex:1;font-size:14px;font-weight:500;
+    border:1px solid transparent;border-radius:6px;padding:4px 6px;background:transparent;
+    font-family:inherit;color:var(--ink);min-width:0;
+  }
+  .worker-name:hover{border-color:var(--line);background:#FBFAF8;}
+  .worker-name:focus{outline:none;border-color:var(--ink);background:#fff;}
+
+  select.status-select{
+    font-family:inherit;font-size:12px;font-weight:700;border:none;border-radius:20px;
+    padding:5px 9px 5px 10px;cursor:pointer;appearance:none;-webkit-appearance:none;
+  }
+  select.status-select.redno{background:var(--redno-soft);color:var(--redno);}
+  select.status-select.bolniska{background:var(--bolniska-soft);color:var(--bolniska);}
+  select.status-select.dopust{background:var(--dopust-soft);color:var(--dopust);}
+  select.status-select.ure4{background:var(--ure4-soft);color:var(--ure4);}
+  select.status-select.drugo{background:var(--drugo-soft);color:var(--drugo);}
+
+  .status-print{display:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;}
+  .status-print.redno{background:var(--redno-soft);color:var(--redno);}
+  .status-print.bolniska{background:var(--bolniska-soft);color:var(--bolniska);}
+  .status-print.dopust{background:var(--dopust-soft);color:var(--dopust);}
+  .status-print.ure4{background:var(--ure4-soft);color:var(--ure4);}
+  .status-print.drugo{background:var(--drugo-soft);color:var(--drugo);}
+
+  .note-input{
+    width:86px;font-family:inherit;font-size:12px;color:var(--muted);
+    border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:#fff;
+  }
+  .note-print{display:none;font-size:12px;color:var(--muted);}
+
+  .icon-btn{
+    border:none;background:transparent;color:var(--muted);cursor:pointer;
+    font-size:14px;padding:3px 5px;border-radius:5px;line-height:1;
+  }
+  .icon-btn:hover{background:#EAE8E2;color:var(--ink);}
+  .move-btn{font-size:11px;font-weight:700;white-space:nowrap;}
+  .shift-card.s1 .move-btn{color:var(--izmena2);}
+  .shift-card.s2 .move-btn{color:var(--izmena1);}
+
+  .tag-dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block;}
+  .tag-dot.rotating{background:var(--izmena1);}
+  .shift-card.s2 .tag-dot.rotating{background:var(--izmena2);}
+  .tag-dot.fixed{background:#C9C6BD;}
+  .legend .tag-dot{width:9px;height:9px;}
+
+  .add-row{display:flex;gap:6px;margin-top:8px;}
+  .add-row input{
+    flex:1;font-family:inherit;font-size:13px;border:1px solid var(--line);
+    border-radius:7px;padding:6px 9px;background:#FBFAF8;
+  }
+  .add-row input:focus{outline:none;border-color:var(--ink);background:#fff;}
+  .add-row button{
+    font-family:inherit;font-size:12.5px;font-weight:700;border:1px dashed var(--line);
+    background:transparent;color:var(--muted);border-radius:7px;padding:6px 12px;cursor:pointer;
+  }
+  .add-row button:hover{border-color:var(--ink);color:var(--ink);}
+
+  /* Other departments + management */
+  .lower{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;}
+  @media (max-width:860px){.lower{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .panel h3{margin:0 0 12px;font-size:14px;font-weight:800;}
+  .other-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:520px){.other-grid{grid-template-columns:1fr;}}
+
+  .mgmt-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #EDEBE5;font-size:14px;}
+  .mgmt-row:last-child{border-bottom:none;}
+  .mgmt-row .role{color:var(--muted);font-size:12.5px;}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:18px 0 0;}
+  .legend .sw{display:inline-flex;align-items:center;gap:5px;}
+  .legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  .empty-hint{font-size:12.5px;color:#A6A29A;font-style:italic;padding:4px 0;}
+
+  /* Print */
+  .print-sign{display:none;}
+  @media print{
+    @page{ size: A4 landscape; margin: 7mm; }
+    html,body{background:#fff;}
+    .wrap{max-width:100%;padding:0;font-size:9px;}
+    .no-print{display:none !important;}
+    .top-controls{display:none;}
+    select.status-select{display:none;}
+    .status-print{display:inline-block;}
+    .note-input{display:none;}
+    .note-print{display:inline;margin-left:2px;}
+    .worker-name{
+      border:none !important;background:none !important;pointer-events:none;
+      font-size:8px !important;padding:0 2px !important;height:auto !important;
+    }
+    .icon-btn{display:none !important;}
+
+    .topbar{padding-bottom:4px;margin-bottom:5px;border-bottom-width:1.5px;}
+    .brand h1{font-size:15px;}
+    .brand .kicker{font-size:8px;}
+
+    .summary{margin-bottom:5px;border-radius:5px;}
+    .summary .cell{padding:3px 7px;}
+    .summary .cell .num{font-size:13px;}
+    .summary .cell .lbl{font-size:7px;margin-top:0;}
+
+    .shifts{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px;}
+    .shift-card,.panel{border:1px solid #ccc;border-radius:5px;break-inside:avoid;}
+    .shift-head{padding:3px 7px;border-bottom-width:2px;}
+    .shift-head .who h2{font-size:10px;}
+    .shift-head .who .sub{font-size:7.5px;}
+    .shift-head .count .n{font-size:12px;}
+    .shift-head .count .of{font-size:6.5px;}
+
+    .dept{padding:2px 7px;}
+    .dept-title{font-size:7px;margin-bottom:0;}
+    .dept-title-name{
+      border:none !important;background:none !important;pointer-events:none;
+      font-size:7px !important;padding:0 !important;color:#555 !important;
+    }
+    .add-dept-btn{display:none !important;}
+    .plant-tabs{display:none !important;}
+    .worker-row{padding:0.5px 0;gap:4px;min-height:0;border-bottom-style:solid;border-color:#f0efe9;}
+    .status-print{font-size:6.5px;padding:0.5px 5px;border-radius:7px;}
+    .tag-dot{width:4px;height:4px;}
+    .empty-hint{font-size:7px;padding:1px 0;}
+
+    .lower{grid-template-columns:1.4fr 1fr;gap:6px;}
+    .panel{padding:4px 7px;}
+    .panel h3{font-size:8px;margin-bottom:3px;}
+    .other-grid{gap:3px;}
+    .mgmt-row{padding:1px 0;font-size:8px;}
+    .mgmt-row .role{font-size:7px;}
+
+    .print-sign{
+      display:flex;justify-content:space-between;margin-top:10px;padding-top:4px;
+      border-top:1px solid #ccc;font-size:7.5px;color:#555;
+    }
+    .print-sign div{width:140px;border-top:1px solid #888;padding-top:2px;text-align:center;}
+  }
+
+  /* PIN gate */
+  #pin-gate{
+    position:fixed;inset:0;background:var(--paper);z-index:1000;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pin-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:32px 28px;width:280px;text-align:center;}
+  .pin-box .icon{font-size:32px;margin-bottom:8px;}
+  .pin-box h2{margin:0 0 4px;font-size:17px;font-weight:800;}
+  .pin-box p{margin:0 0 16px;font-size:13px;color:var(--muted);}
+  .pin-box input{
+    width:100%;font-family:inherit;font-size:20px;letter-spacing:4px;text-align:center;
+    border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:10px;box-sizing:border-box;
+  }
+  .pin-box input:focus{outline:none;border-color:var(--ink);}
+  .pin-box button{
+    width:100%;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+    border:none;border-radius:9px;background:var(--ink);color:#fff;padding:10px;
+  }
+  .pin-box .err{color:var(--bolniska);font-size:12.5px;margin-top:8px;min-height:16px;}
+</style>
+</head>
+<body>
+<div id="pin-gate" style="display:none;">
+  <div class="pin-box">
+    <div class="icon">🔒</div>
+    <h2>Razpored izmen</h2>
+    <p>Vnesi PIN za dostop</p>
+    <input type="password" inputmode="numeric" id="pin-input" maxlength="8" autofocus>
+    <button onclick="checkPin()">Vstopi</button>
+    <div class="err" id="pin-err"></div>
+  </div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+const STORAGE_KEY = 'roster-v1';
+
+// Vsa komunikacija gre prek lastne Netlify funkcije (/.netlify/functions/sync),
+// ki na strežniku (ne v brskalniku) pokliče Google Sheets. Tako ni CORS ali
+// omrežnih/požarnozidnih težav, geslo pa ni nikoli vidno v tej datoteki.
+const SYNC_ENDPOINT = '/.netlify/functions/sync';
+
+function cloudConfigured(){
+  return true;
+}
+
+let lastCloudError = null;
+
+async function cloudGet(){
+  try{
+    const res = await fetch(SYNC_ENDPOINT + '?t=' + Date.now());
+    const data = await res.json();
+    lastCloudError = null;
+    return (data && data.value) ? data.value : null;
+  } catch(e){
+    console.error('Branje ni uspelo', e);
+    lastCloudError = 'Branje ni uspelo: ' + e.message;
+    return null;
+  }
+}
+
+async function cloudSet(json){
+  try{
+    const res = await fetch(SYNC_ENDPOINT + '?action=set&value=' + encodeURIComponent(json));
+    const data = await res.json();
+    if (data && data.ok === true){
+      lastCloudError = null;
+      return true;
+    }
+    lastCloudError = 'Shranjevanje ni uspelo: ' + (data && data.error ? data.error : 'neznana napaka');
+    console.error(lastCloudError);
+    return false;
+  } catch(e){
+    lastCloudError = 'Povezava ni uspela: ' + e.message;
+    console.error(lastCloudError);
+    return false;
+  }
+}
+
+const seedData = {
+  plantOrder: ['velenje', 'slovenj-gradec'],
+  plants: {
+    velenje: {
+      name: 'Velenje',
+      date: '2026-08-27',
+      departments: ['Sestava + pakiranje + zatis','Stiskalnice + pakiranje','Laser + krivljenje','Varenje + Brušenje','Ostali'],
+      fixedCrew: [
+        ['Anclin Enis','Gvozden Nada','Amira Hasanović','Asmira Hamzić','Daljac Marima','Konjević Mirela','Delavec 1'],
+        [],
+        ['Medvešek Marko','Podpečan Tone','Študent 2 - Žiga Jurač'],
+        ['Stanojev Boštjan','Žigič Nenad','Delavec 4'],
+        ['Zadravec Sebastjan','Metalan Sandi','Merzdovnik Helena'],
+      ],
+      shifts: [
+        {
+          id: 'vel-s1', label: 'Izmena 1', time: 'Dopoldan', supervisor: 'Nikola Ružić', accent: 'izmena1',
+          team: [
+            ['Yereshcenko Alina'],
+            ['Kajtna Irena','Stojčeva Zule','Tulopov Pavel','Masatović Ana','Dragišić Dario','Merdić Šida'],
+            ['Rustam Sabirzhanov'],
+            ['Genc Buja'],
+            [],
+          ]
+        },
+        {
+          id: 'vel-s2', label: 'Izmena 2', time: 'Popoldan', supervisor: 'Jan Ramšak', accent: 'izmena2',
+          team: [
+            ['Popović Liljana'],
+            ['Stojchev Vancho','Miljković Lazar','Rok Pečovnik','Štumberger Tadej'],
+            ['Ilić Aleksander','Pavlo Deomidov','Popovič Biljana','Rok Pečovnik'],
+            ['Čoderla Denis'],
+            [],
+          ]
+        }
+      ],
+      otherDepartments: [
+        { name: 'Logistika / Kakovost', workers: ['Razija Bešić'] },
+        { name: 'Razvoj', workers: ['Korez Bogdan','Jurač Jaka'] },
+        { name: 'Tehnologija / Kakovost', workers: [] },
+        { name: 'Vzdrževanje', workers: ['Marko Dedič'] },
+      ],
+      management: [
+        { role: 'Vodja obrata', name: '' },
+        { role: 'Vodja proizvodnje', name: 'Marko Dedič' },
+      ],
+    },
+    'slovenj-gradec': {
+      name: 'Slovenj Gradec',
+      date: '',
+      departments: ['Oddelek 1'],
+      fixedCrew: [ [] ],
+      shifts: [
+        { id: 'sg-s1', label: 'Izmena 1', time: 'Dopoldan', supervisor: '', accent: 'izmena1', team: [ [] ] },
+        { id: 'sg-s2', label: 'Izmena 2', time: 'Popoldan', supervisor: '', accent: 'izmena2', team: [ [] ] },
+      ],
+      otherDepartments: [],
+      management: [
+        { role: 'Vodja obrata', name: '' },
+        { role: 'Vodja proizvodnje', name: '' },
+      ],
+    }
+  }
+};
+
+let uidCounter = 1;
+function uid(){ return 'w' + (uidCounter++); }
+
+function seedPlant(p){
+  const mk = (name) => ({ id: uid(), name, status: INITIAL_STATUS[name] || 'redno', note: '' });
+  p.fixedCrew = p.fixedCrew.map(list => list.map(mk));
+  p.shifts.forEach(sh => { sh.team = sh.team.map(list => list.map(mk)); });
+  p.otherDepartments.forEach(d => { d.workers = d.workers.map(name => mk(name)); });
+  return p;
+}
+
+function buildInitialState(){
+  const s = JSON.parse(JSON.stringify(seedData));
+  Object.values(s.plants).forEach(seedPlant);
+  return s;
+}
+
+let state = null;
+let activePlant = 'velenje';
+try{ activePlant = localStorage.getItem('active-plant-v1') || 'velenje'; } catch(e){}
+
+function P(){ return state.plants[activePlant]; }
+
+function scanIds(s){
+  let maxId = 0;
+  const scan = (w) => { const n = parseInt((w.id||'w0').slice(1)); if(n>maxId) maxId=n; };
+  Object.values(s.plants).forEach(p => {
+    p.fixedCrew.forEach(list=>list.forEach(scan));
+    p.shifts.forEach(sh=>sh.team.forEach(list=>list.forEach(scan)));
+    p.otherDepartments.forEach(d=>d.workers.forEach(scan));
+  });
+  uidCounter = maxId + 1;
+}
+
+function applyRawState(raw){
+  state = JSON.parse(raw);
+  if (!state.plants[activePlant]) activePlant = state.plantOrder[0];
+  scanIds(state);
+}
+
+async function loadState(){
+  let raw = await cloudGet();
+  if (!raw && window.storage){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if (res && res.value) raw = res.value;
+    } catch(e){ /* not available in this context */ }
+  }
+  if (!raw){
+    try{ raw = localStorage.getItem(STORAGE_KEY); } catch(e){}
+  }
+  if (raw){
+    try{ applyRawState(raw); }
+    catch(e){ state = buildInitialState(); }
+  } else {
+    state = buildInitialState();
+  }
+  lastSeenJson = JSON.stringify(state);
+  render();
+}
+
+async function saveState(){
+  const json = JSON.stringify(state);
+  lastSeenJson = json;
+  const cloudOk = await cloudSet(json);
+  if (!cloudOk && window.storage){
+    try{ await window.storage.set(STORAGE_KEY, json, true); } catch(e){}
+  }
+  try{ localStorage.setItem(STORAGE_KEY, json); } catch(e){ console.error('Shranjevanje ni uspelo', e); }
+  updateSyncIndicator(cloudOk);
+}
+
+function updateSyncIndicator(cloudOk){
+  const el = document.getElementById('sync-indicator');
+  if (!el) return;
+  if (!cloudConfigured()){
+    el.innerHTML = '⚠️ Google Sheets ni nastavljen (deluje samo lokalno)';
+  } else if (cloudOk){
+    el.innerHTML = '☁️ Povezano z Google Sheets — zadnja sprememba shranjena';
+  } else {
+    el.innerHTML = `❌ Shranjevanje v Google Sheets NI uspelo (${escapeHtml(lastCloudError||'neznana napaka')}) — sprememba je samo lokalna!`;
+    el.style.color = 'var(--bolniska)';
+  }
+}
+
+let lastSeenJson = null;
+async function refreshFromShared(silent){
+  if (!cloudConfigured() && !window.storage) { if(!silent) alert('Skupno shranjevanje ni na voljo v tem načinu (lokalno odprta datoteka brez nastavljenega Google Sheets).'); return; }
+  const active = document.activeElement;
+  const isTyping = active && (active.tagName==='INPUT' || active.tagName==='SELECT');
+  if (isTyping && silent) return; // don't yank focus away while someone is typing
+  try{
+    let raw = await cloudGet();
+    if (!raw && window.storage){
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if (res && res.value) raw = res.value;
+    }
+    if (raw && raw !== lastSeenJson){
+      applyRawState(raw);
+      lastSeenJson = raw;
+      render();
+    }
+  } catch(e){ if(!silent) alert('Osveževanje ni uspelo.'); }
+}
+setInterval(() => refreshFromShared(true), 20000);
+
+function switchPlant(id){
+  activePlant = id;
+  try{ localStorage.setItem('active-plant-v1', id); } catch(e){}
+  render();
+}
+
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'razpored-backup-' + (P().date||'izvoz') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function triggerImport(){
+  const input = document.getElementById('import-file-input');
+  if (input) input.click();
+}
+
+function importBackup(fileInput){
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      state = JSON.parse(e.target.result);
+      if (!state.plants[activePlant]) activePlant = state.plantOrder[0];
+      scanIds(state);
+      persistAndRender();
+    } catch(err){
+      alert('Datoteke ni bilo mogoče prebrati — preveri, da gre za pravilno izvoženo backup datoteko.');
+    }
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+}
+
+function persistAndRender(){ saveState(); render(); }
+
+const STATUS_LABELS = { redno:'Redno', bolniska:'Bolniška', dopust:'Dopust', ure4:'4 ure', drugo:'Drugo' };
+const INITIAL_STATUS = {
+  'Kajtna Irena': 'bolniska',
+  'Metalan Sandi': 'dopust',
+  'Popović Liljana': 'dopust',
+  'Popovič Biljana': 'dopust',
+  'Zadravec Sebastjan': 'ure4',
+};
+
+function findWorker(id){
+  const p = P();
+  for (let i=0;i<p.fixedCrew.length;i++){
+    const w = p.fixedCrew[i].find(w=>w.id===id);
+    if (w) return { worker:w, list:p.fixedCrew[i], scope:'fixed', deptIdx:i };
+  }
+  for (const sh of p.shifts){
+    for (let i=0;i<sh.team.length;i++){
+      const w = sh.team[i].find(w=>w.id===id);
+      if (w) return { worker:w, list:sh.team[i], scope:'team', shift:sh, deptIdx:i };
+    }
+  }
+  for (const d of p.otherDepartments){
+    const w = d.workers.find(w=>w.id===id);
+    if (w) return { worker:w, list:d.workers, scope:'other' };
+  }
+  return null;
+}
+
+function setName(id, name){
+  const f = findWorker(id); if(!f) return;
+  f.worker.name = name;
+  saveState();
+}
+function setStatus(id, status){
+  const f = findWorker(id); if(!f) return;
+  f.worker.status = status;
+  persistAndRender();
+}
+function setNote(id, note){
+  const f = findWorker(id); if(!f) return;
+  f.worker.note = note;
+  saveState();
+}
+function removeWorker(id){
+  const f = findWorker(id); if(!f) return;
+  const idx = f.list.indexOf(f.worker);
+  if (idx>-1) f.list.splice(idx,1);
+  persistAndRender();
+}
+function moveWorker(id){
+  const f = findWorker(id); if(!f || f.scope!=='team') return;
+  const otherShift = P().shifts.find(sh=>sh.id!==f.shift.id);
+  const idx = f.list.indexOf(f.worker);
+  if (idx>-1) f.list.splice(idx,1);
+  otherShift.team[f.deptIdx].push(f.worker);
+  persistAndRender();
+}
+function addWorker(scope, shiftId, deptIdx, name){
+  name = (name||'').trim();
+  if (!name) return;
+  const w = { id: uid(), name, status:'redno', note:'' };
+  if (scope==='team'){
+    P().shifts.find(sh=>sh.id===shiftId).team[deptIdx].push(w);
+  } else if (scope==='fixed'){
+    P().fixedCrew[deptIdx].push(w);
+  } else {
+    P().otherDepartments[deptIdx].workers.push(w);
+  }
+  persistAndRender();
+}
+function setDate(v){ P().date = v; saveState(); }
+function setMgmtName(idx, v){ P().management[idx].name = v; saveState(); }
+function setSupervisor(shiftId, v){
+  const sh = P().shifts.find(s=>s.id===shiftId);
+  if (sh) { sh.supervisor = v; saveState(); }
+}
+function swapShiftLeaders(){
+  const [a, b] = P().shifts;
+  const supTmp = a.supervisor; a.supervisor = b.supervisor; b.supervisor = supTmp;
+  const teamTmp = a.team; a.team = b.team; b.team = teamTmp;
+  persistAndRender();
+}
+
+function setDeptName(idx, name){
+  P().departments[idx] = name;
+  saveState();
+}
+function addDepartment(){
+  const p = P();
+  p.departments.push('Nov oddelek');
+  p.fixedCrew.push([]);
+  p.shifts.forEach(sh => sh.team.push([]));
+  persistAndRender();
+}
+function removeDepartment(idx){
+  const p = P();
+  const total = p.fixedCrew[idx].length + p.shifts.reduce((a,sh)=>a+sh.team[idx].length,0);
+  if (total>0){ alert('Oddelek ni prazen — najprej odstrani ali premakni vse delavce iz njega.'); return; }
+  if (p.departments.length<=1){ alert('Vsaj en oddelek mora ostati.'); return; }
+  p.departments.splice(idx,1);
+  p.fixedCrew.splice(idx,1);
+  p.shifts.forEach(sh => sh.team.splice(idx,1));
+  persistAndRender();
+}
+function addOtherDept(){
+  P().otherDepartments.push({ name:'Nov oddelek', workers: [] });
+  persistAndRender();
+}
+function removeOtherDept(idx){
+  const d = P().otherDepartments[idx];
+  if (d.workers.length>0){ alert('Oddelek ni prazen — najprej odstrani vse delavce iz njega.'); return; }
+  P().otherDepartments.splice(idx,1);
+  persistAndRender();
+}
+function setOtherDeptName(idx, name){
+  P().otherDepartments[idx].name = name;
+  saveState();
+}
+
+function workerRow(w, opts){
+  const otherLabel = opts.shiftLabel === 'Izmena 1' ? 'Izmena 2' : 'Izmena 1';
+  return `
+    <div class="worker-row">
+      ${opts.tag ? `<span class="tag-dot ${opts.tag}" title="${opts.tag==='rotating' ? 'Kroži z vodjo izmene' : 'Stalno dopoldan'}"></span>` : ''}
+      <input class="worker-name" value="${escapeAttr(w.name)}" onchange="setName('${w.id}', this.value)">
+      <select class="status-select ${w.status}" onchange="setStatus('${w.id}', this.value)">
+        ${Object.entries(STATUS_LABELS).map(([k,v])=>`<option value="${k}" ${w.status===k?'selected':''}>${v}</option>`).join('')}
+      </select>
+      <span class="status-print ${w.status}">${STATUS_LABELS[w.status]}</span>
+      ${(w.status==='bolniska'||w.status==='dopust'||w.status==='ure4') ? `
+        <input class="note-input no-print" placeholder="npr. do 12.9" value="${escapeAttr(w.note)}" onchange="setNote('${w.id}', this.value)">
+        <span class="note-print">${w.note ? '(' + escapeHtml(w.note) + ')' : ''}</span>
+      ` : ''}
+      ${opts.movable ? `<button class="icon-btn move-btn no-print" title="Premakni v ${otherLabel}" onclick="moveWorker('${w.id}')">→ ${otherLabel==='Izmena 1'?'I1':'I2'}</button>` : ''}
+      <button class="icon-btn no-print" title="Izbriši" onclick="removeWorker('${w.id}')">✕</button>
+    </div>`;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+function deptBlock(deptName, deptIdx, groups, opts){
+  opts = opts || {};
+  const total = groups.reduce((a,g)=>a+g.list.length,0);
+  const rowsHtml = groups.map(g => g.list.map(w => workerRow(w, { movable:g.movable, shiftLabel:g.shiftLabel, tag:g.tag })).join('')).join('');
+  const addRowsHtml = groups.filter(g=>g.addScope).map(g => `
+      <div class="add-row no-print">
+        <input type="text" placeholder="${g.addPlaceholder}" id="add-${g.addKey}">
+        <button onclick="handleAdd('${g.addKey}', ${g.shiftId ? `'${g.shiftId}'` : 'null'}, ${deptIdx}, '${g.addScope}')">+ Dodaj</button>
+      </div>`).join('');
+  const nameInput = opts.renameFn
+    ? `<input class="dept-title-name" value="${escapeAttr(deptName)}" onchange="${opts.renameFn}(${deptIdx}, this.value)">`
+    : `<span>${escapeHtml(deptName)}</span>`;
+  const removeBtn = (opts.canRemove && opts.removeFn)
+    ? `<button class="icon-btn no-print" title="Izbriši oddelek" onclick="${opts.removeFn}(${deptIdx})">✕</button>`
+    : '';
+  return `
+    <div class="dept">
+      <div class="dept-title">${nameInput}<span class="dn">${total}</span>${removeBtn}</div>
+      ${total ? rowsHtml : '<div class="empty-hint">Ni dodeljenih delavcev</div>'}
+      ${addRowsHtml}
+    </div>`;
+}
+
+function handleAdd(inputId, shiftId, deptIdx, scope){
+  const el = document.getElementById('add-' + inputId);
+  if (!el) return;
+  addWorker(scope, shiftId, deptIdx, el.value);
+  el.value = '';
+}
+
+function countWorking(list){ return list.filter(w=>w.status==='redno').length; }
+
+function render(){
+  const app = document.getElementById('app');
+  const p = P();
+
+  const s1 = p.shifts[0], s2 = p.shifts[1];
+  const depts = p.departments;
+
+  const s1Total = depts.reduce((a,_,i)=>a + p.fixedCrew[i].length + s1.team[i].length, 0);
+  const s2Total = depts.reduce((a,_,i)=>a + s2.team[i].length, 0);
+  const s1Working = depts.reduce((a,_,i)=>a + countWorking(p.fixedCrew[i]) + countWorking(s1.team[i]), 0);
+  const s2Working = depts.reduce((a,_,i)=>a + countWorking(s2.team[i]), 0);
+  const otherTotal = p.otherDepartments.reduce((a,d)=>a+d.workers.length,0);
+  const plantTotal = s1Total + s2Total + otherTotal;
+
+  const deptCanRemove = (i) => depts.length>1 && p.fixedCrew[i].length===0 && s1.team[i].length===0 && s2.team[i].length===0;
+
+  const s1Blocks = depts.map((name,i) => deptBlock(name, i, [
+    { list: s1.team[i], tag:'rotating', movable:true, shiftId:s1.id, shiftLabel:s1.label, addScope:'team', addKey:'s1t-'+i, addPlaceholder:'Dodaj (kroži z vodjo)...' },
+    { list: p.fixedCrew[i], tag:'fixed', movable:false, addScope:'fixed', addKey:'fx-'+i, addPlaceholder:'Dodaj (stalno dopoldan)...' },
+  ], { renameFn:'setDeptName', removeFn:'removeDepartment', canRemove:deptCanRemove(i) })).join('');
+
+  const s2Blocks = depts.map((name,i) => deptBlock(name, i, [
+    { list: s2.team[i], tag:'rotating', movable:true, shiftId:s2.id, shiftLabel:s2.label, addScope:'team', addKey:'s2t-'+i, addPlaceholder:'Dodaj (kroži z vodjo)...' },
+  ], { renameFn:'setDeptName', removeFn:'removeDepartment', canRemove:deptCanRemove(i) })).join('');
+
+  const plantTabsHtml = state.plantOrder.map(id => `
+    <button class="plant-tab ${id===activePlant?'active':''}" onclick="switchPlant('${id}')">${escapeHtml(state.plants[id].name)}</button>
+  `).join('');
+
+  app.innerHTML = `
+    <div class="plant-tabs no-print plant-tab-bar">${plantTabsHtml}</div>
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="kicker">Obrat ${escapeHtml(p.name)}</div>
+        <h1>Razpored izmen</h1>
+      </div>
+      <div class="shared-note no-print">
+        Skupni razpored — vsi urejate isto povezavo.
+        <span id="sync-indicator" style="font-weight:700;">${cloudConfigured() ? '☁️ Povezano z Google Sheets' : '⚠️ Google Sheets ni nastavljen (deluje samo lokalno)'}</span>
+      </div>
+      <div class="top-controls no-print">
+        <div class="date-field">Datum
+          <input type="date" value="${p.date}" onchange="setDate(this.value)">
+        </div>
+        <button class="btn" onclick="window.print()">🖨 Natisni</button>
+        <button class="btn" onclick="refreshFromShared(false)" title="Naloži najnovejše spremembe drugih uporabnikov">🔄 Osveži</button>
+        <button class="btn" onclick="swapShiftLeaders()" title="Zamenja vodji izmen skupaj z njunima rotirajočima ekipama">⇄ Zamenjaj vodji izmen</button>
+        <button class="btn ghost small" onclick="exportBackup()" title="Prenesi varnostno kopijo podatkov">💾 Backup</button>
+        <button class="btn ghost small" onclick="triggerImport()" title="Naloži predhodno varnostno kopijo">📂 Naloži</button>
+        <input type="file" id="import-file-input" accept="application/json" style="display:none" onchange="importBackup(this)">
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="cell accent1"><div class="num">${s1Working}<span style="font-size:15px;color:var(--muted);font-weight:600;"> / ${s1Total}</span></div><div class="lbl">Izmena 1 — na delu / skupaj</div></div>
+      <div class="cell accent2"><div class="num">${s2Working}<span style="font-size:15px;color:var(--muted);font-weight:600;"> / ${s2Total}</span></div><div class="lbl">Izmena 2 — na delu / skupaj</div></div>
+      <div class="cell"><div class="num">${s1Total+s2Total}</div><div class="lbl">Proizvodnja skupaj</div></div>
+      <div class="cell"><div class="num">${otherTotal}</div><div class="lbl">Drugi oddelki</div></div>
+      <div class="cell"><div class="num">${plantTotal}</div><div class="lbl">Obrat skupaj</div></div>
+    </div>
+
+    <div class="shifts">
+      <div class="shift-card s1">
+        <div class="shift-head">
+          <div class="who"><h2>${s1.label} · ${s1.time}</h2><div class="sub">Vodja: <input class="worker-name" style="display:inline-block;width:150px;padding:2px 5px;font-size:12.5px;color:var(--muted);" value="${escapeAttr(s1.supervisor)}" onchange="setSupervisor('${s1.id}', this.value)"></div></div>
+          <div class="count"><div class="n">${s1Total}</div><div class="of">delavcev</div></div>
+        </div>
+        ${s1Blocks}
+      </div>
+      <div class="shift-card s2">
+        <div class="shift-head">
+          <div class="who"><h2>${s2.label} · ${s2.time}</h2><div class="sub">Vodja: <input class="worker-name" style="display:inline-block;width:150px;padding:2px 5px;font-size:12.5px;color:var(--muted);" value="${escapeAttr(s2.supervisor)}" onchange="setSupervisor('${s2.id}', this.value)"></div></div>
+          <div class="count"><div class="n">${s2Total}</div><div class="of">delavcev</div></div>
+        </div>
+        ${s2Blocks}
+      </div>
+    </div>
+    <button class="add-dept-btn no-print" onclick="addDepartment()">+ Dodaj oddelek (v obe izmeni)</button>
+
+    <div class="lower">
+      <div class="panel">
+        <h3>Drugi oddelki <span style="font-weight:500;color:var(--muted);font-size:12px;">(vedno dopoldan)</span></h3>
+        <div class="other-grid">
+          ${p.otherDepartments.map((d,i)=>deptBlock(d.name, i, [{ list:d.workers, tag:null, movable:false, addScope:'other', addKey:'o-'+i, addPlaceholder:'Ime in priimek...' }], { renameFn:'setOtherDeptName', removeFn:'removeOtherDept', canRemove:d.workers.length===0 })).join('')}
+        </div>
+        <button class="add-dept-btn no-print" onclick="addOtherDept()">+ Dodaj oddelek</button>
+      </div>
+      <div class="panel">
+        <h3>Vodstvo</h3>
+        ${p.management.map((m,i)=>`
+          <div class="mgmt-row">
+            <span class="role">${escapeHtml(m.role)}</span>
+            <input class="worker-name" style="text-align:right;max-width:180px;" value="${escapeAttr(m.name)}" placeholder="—" onchange="setMgmtName(${i}, this.value)">
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="legend no-print">
+      <span class="sw"><span class="dot" style="background:var(--izmena1);"></span>Izmena 1 — dopoldan</span>
+      <span class="sw"><span class="dot" style="background:var(--izmena2);"></span>Izmena 2 — popoldan</span>
+      <span class="sw"><span class="tag-dot rotating"></span>Kroži z vodjo</span>
+      <span class="sw"><span class="tag-dot fixed"></span>Stalno dopoldan</span>
+      <span class="sw"><span class="dot" style="background:var(--redno);"></span>Redno</span>
+      <span class="sw"><span class="dot" style="background:var(--bolniska);"></span>Bolniška</span>
+      <span class="sw"><span class="dot" style="background:var(--dopust);"></span>Dopust</span>
+      <span class="sw"><span class="dot" style="background:var(--ure4);"></span>4 ure</span>
+    </div>
+
+    <div class="print-sign">
+      <div>Vodja proizvodnje</div>
+      <div>Direktor</div>
+    </div>
+  `;
+}
+
+const ACCESS_PIN = '2016';
+const PIN_UNLOCK_KEY = 'razpored-unlocked-v1';
+
+function checkPin(){
+  const input = document.getElementById('pin-input');
+  const err = document.getElementById('pin-err');
+  if (input.value === ACCESS_PIN){
+    try{ localStorage.setItem(PIN_UNLOCK_KEY, 'yes'); } catch(e){}
+    document.getElementById('pin-gate').style.display = 'none';
+    loadState();
+  } else {
+    err.textContent = 'Napačen PIN, poskusi znova.';
+    input.value = '';
+    input.focus();
+  }
+}
+
+(function initGate(){
+  let unlocked = false;
+  try{ unlocked = localStorage.getItem(PIN_UNLOCK_KEY) === 'yes'; } catch(e){}
+  if (unlocked){
+    loadState();
+  } else {
+    document.getElementById('pin-gate').style.display = 'flex';
+    const input = document.getElementById('pin-input');
+    input.focus();
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPin(); });
+  }
+})();
+</script>
+</body>
+</html>
