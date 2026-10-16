@@ -316,12 +316,21 @@ function cloudConfigured(){
 }
 
 let lastCloudError = null;
+let lastSyncAt = null;
+
+function syncTimeText(){
+  if (!lastSyncAt) return '';
+  const d = lastSyncAt;
+  const pad = n => String(n).padStart(2,'0');
+  return ' (' + d.getDate() + '. ' + (d.getMonth()+1) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ')';
+}
 
 async function cloudGet(){
   try{
     const res = await fetch(SYNC_ENDPOINT + '?t=' + Date.now());
     const data = await res.json();
     lastCloudError = null;
+    lastSyncAt = new Date();
     return (data && data.value) ? data.value : null;
   } catch(e){
     console.error('Branje ni uspelo', e);
@@ -336,6 +345,7 @@ async function cloudSet(json){
     const data = await res.json();
     if (data && data.ok === true){
       lastCloudError = null;
+      lastSyncAt = new Date();
       return true;
     }
     lastCloudError = 'Shranjevanje ni uspelo: ' + (data && data.error ? data.error : 'neznana napaka');
@@ -491,7 +501,8 @@ function updateSyncIndicator(cloudOk){
   if (!cloudConfigured()){
     el.innerHTML = '⚠️ Google Sheets ni nastavljen (deluje samo lokalno)';
   } else if (cloudOk){
-    el.innerHTML = '☁️ Povezano z Google Sheets — zadnja sprememba shranjena';
+    el.innerHTML = '☁️ Povezano — zadnja sinhronizacija' + syncTimeText();
+    el.style.color = '';
   } else {
     el.innerHTML = `❌ Shranjevanje v Google Sheets NI uspelo (${escapeHtml(lastCloudError||'neznana napaka')}) — sprememba je samo lokalna!`;
     el.style.color = 'var(--bolniska)';
@@ -514,6 +525,8 @@ async function refreshFromShared(silent){
       applyRawState(raw);
       lastSeenJson = raw;
       render();
+    } else if (raw){
+      updateSyncIndicator(true);
     }
   } catch(e){ if(!silent) alert('Osveževanje ni uspelo.'); }
 }
@@ -774,7 +787,7 @@ function render(){
       </div>
       <div class="shared-note no-print">
         Skupni razpored — vsi urejate isto povezavo.
-        <span id="sync-indicator" style="font-weight:700;">${cloudConfigured() ? '☁️ Povezano z Google Sheets' : '⚠️ Google Sheets ni nastavljen (deluje samo lokalno)'}</span>
+        <span id="sync-indicator" style="font-weight:700;">${lastCloudError ? '❌ Povezava ni uspela — ' + escapeHtml(lastCloudError) : '☁️ Povezano — zadnja sinhronizacija' + syncTimeText()}</span>
       </div>
       <div class="top-controls no-print">
         <div class="date-field">Datum
