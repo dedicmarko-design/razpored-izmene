@@ -207,6 +207,30 @@
 
   .empty-hint{font-size:12.5px;color:#A6A29A;font-style:italic;padding:4px 0;}
 
+
+  .need-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:12px;align-items:start;}
+  .need-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;border-bottom:2px solid var(--ink);padding-bottom:6px;}
+  .need-proj{flex:1;font-size:16px !important;font-weight:800;}
+  .need-tot{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;}
+  .need-row{display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #f0efe9;}
+  .need-row .need-name{flex:1;min-width:0;}
+  .need-row .n1,.need-row .n2{width:64px;text-align:center;flex:none;}
+  .need-cols{font-size:11.5px;color:var(--muted);font-weight:700;border-bottom:none;}
+  .need-num{font-family:inherit;font-size:15px;font-weight:700;padding:5px 4px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);}
+  .need-num.n1{color:var(--izmena1);} .need-num.n2{color:var(--izmena2);}
+  .need-num:focus{outline:none;border-color:var(--ink);}
+
+
+  .need-calc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:4px 0 8px;font-size:11.5px;color:var(--muted);}
+  .need-calc label{display:flex;flex-direction:column;gap:2px;}
+  .need-calc input,.need-set-row input{width:78px;font-family:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);}
+  .need-sug{font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .need-hint{font-size:11.5px;color:var(--muted);}
+  .need-settings{margin-bottom:14px;}
+  .need-set-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;}
+  .need-set-row label{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted);}
+  .btn.small{padding:5px 10px;font-size:12px;}
+
   /* Print */
   .print-sign{display:none;}
   @media print{
@@ -263,6 +287,19 @@
     .other-grid{gap:.3rem;}
     .mgmt-row{padding:.1rem 0;font-size:.9rem;}
     .mgmt-row .role{font-size:.75rem;}
+
+
+    .need-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin-bottom:.4rem;}
+    .need-row .need-name{width:0;}
+    .need-proj{width:0;min-width:0;}
+    .need-head{margin-bottom:.25rem;padding-bottom:.2rem;border-bottom-width:1.5px;gap:.3rem;}
+    .need-proj{font-size:1.1rem !important;}
+    .need-tot{font-size:.85rem;}
+    .need-row{gap:.3rem;padding:.12rem 0;}
+    .need-row .n1,.need-row .n2{width:3.2rem;}
+    .need-cols{font-size:.7rem;}
+    .need-num{border:none !important;background:none !important;font-size:1.05rem;padding:0 !important;-moz-appearance:textfield;appearance:textfield;}
+    .need-num::-webkit-outer-spin-button,.need-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 
     .print-sign{
       display:flex;justify-content:space-between;margin-top:1rem;padding-top:.4rem;
@@ -436,9 +473,29 @@ function seedPlant(p){
   return p;
 }
 
+function defaultNeeds(){
+  const mk = (name, rows) => ({ name, rows: rows.map(r => ({ name:r, s1:0, s2:0 })) });
+  return { projects: [
+    mk('Reimo Zehnder', ['Sestava','Krivljenje','Laser']),
+    mk('Francija', ['Stiskalnica 1','Stiskalnica 2','Stiskalnica 3']),
+    mk('Papst', ['Stiskalnica 1','Stiskalnica 2','Brušenje']),
+    mk('Yokogawa', ['Varjenje','Brušenje','Rezkanje']),
+    mk('Gorenje', ['Stiskalnica'])
+  ]};
+}
+function ensureNeeds(st){
+  if (!st.needs || !Array.isArray(st.needs.projects)) st.needs = defaultNeeds();
+  if (!st.needs.settings) st.needs.settings = { hours: 8, eff: 85 };
+}
+function validActive(){
+  if (activePlant === 'potrebe') return;
+  if (!state.plants[activePlant]) activePlant = state.plantOrder[0];
+}
+
 function buildInitialState(){
   const s = JSON.parse(JSON.stringify(seedData));
   Object.values(s.plants).forEach(seedPlant);
+  ensureNeeds(s);
   return s;
 }
 
@@ -461,7 +518,8 @@ function scanIds(s){
 
 function applyRawState(raw){
   state = JSON.parse(raw);
-  if (!state.plants[activePlant]) activePlant = state.plantOrder[0];
+  ensureNeeds(state);
+  validActive();
   scanIds(state);
 }
 
@@ -545,7 +603,7 @@ function exportBackup(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'razpored-backup-' + (P().date||'izvoz') + '.json';
+  a.download = 'razpored-backup-' + ((activePlant!=='potrebe' && P().date)||'izvoz') + '.json';
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -564,7 +622,8 @@ function importBackup(fileInput){
   reader.onload = (e) => {
     try{
       state = JSON.parse(e.target.result);
-      if (!state.plants[activePlant]) activePlant = state.plantOrder[0];
+      ensureNeeds(state);
+      validActive();
       scanIds(state);
       persistAndRender();
     } catch(err){
@@ -751,6 +810,7 @@ function handleAdd(inputId, shiftId, deptIdx, scope){
 function countWorking(list){ return list.filter(w=>w.status==='redno').length; }
 
 function render(){
+  if (activePlant === 'potrebe'){ renderNeeds(); return; }
   const app = document.getElementById('app');
   const p = P();
 
@@ -775,9 +835,7 @@ function render(){
     { list: s2.team[i], tag:'rotating', movable:true, shiftId:s2.id, shiftLabel:s2.label, addScope:'team', addKey:'s2t-'+i, addPlaceholder:'Dodaj (kroži z vodjo)...' },
   ], { renameFn:'setDeptName', removeFn:'removeDepartment', canRemove:deptCanRemove(i) })).join('');
 
-  const plantTabsHtml = state.plantOrder.map(id => `
-    <button class="plant-tab ${id===activePlant?'active':''}" onclick="switchPlant('${id}')">${escapeHtml(state.plants[id].name)}</button>
-  `).join('');
+  const plantTabsHtml = plantTabsMarkup();
 
   app.innerHTML = `
     <div class="plant-tabs no-print plant-tab-bar">${plantTabsHtml}</div>
@@ -866,6 +924,195 @@ function render(){
   `;
 }
 
+// ---- Zavihek: Potrebe po delavcih ----
+function plantTabsMarkup(){
+  return state.plantOrder.map(id => `
+    <button class="plant-tab ${id===activePlant?'active':''}" onclick="switchPlant('${id}')">${escapeHtml(state.plants[id].name)}</button>
+  `).join('') + `
+    <button class="plant-tab ${activePlant==='potrebe'?'active':''}" onclick="switchPlant('potrebe')">Potrebe po delavcih</button>
+  `;
+}
+
+function needNum(v){ const n = parseInt(v, 10); return (isNaN(n) || n < 0) ? 0 : n; }
+function needTotals(){
+  let t1 = 0, t2 = 0;
+  state.needs.projects.forEach(pr => pr.rows.forEach(r => { t1 += needNum(r.s1); t2 += needNum(r.s2); }));
+  return { t1, t2 };
+}
+function needAvail(){
+  // razpoložljivi delavci "na delu" v prvem obratu (Velenje)
+  const id = state.plantOrder[0];
+  const p = state.plants[id];
+  const s1 = p.shifts[0], s2 = p.shifts[1];
+  let a1 = 0, a2 = 0;
+  p.departments.forEach((_, i) => {
+    a1 += countWorking(p.fixedCrew[i]) + countWorking(s1.team[i]);
+    a2 += countWorking(s2.team[i]);
+  });
+  return { name: p.name, a1, a2 };
+}
+function diffCell(avail, need){
+  const d = avail - need;
+  const col = d < 0 ? '#C0392B' : '#2E7D32';
+  return `<span style="color:${col}">${d > 0 ? '+' : ''}${d}</span>`;
+}
+function needsSummaryHtml(){
+  const { t1, t2 } = needTotals();
+  const av = needAvail();
+  return `
+      <div class="cell accent1"><div class="num">${t1}</div><div class="lbl">Potrebno — Izmena 1</div></div>
+      <div class="cell accent2"><div class="num">${t2}</div><div class="lbl">Potrebno — Izmena 2</div></div>
+      <div class="cell"><div class="num">${t1 + t2}</div><div class="lbl">Potrebno skupaj</div></div>
+      <div class="cell"><div class="num">${av.a1} / ${av.a2}</div><div class="lbl">${escapeHtml(av.name)}: na delu I1 / I2</div></div>
+      <div class="cell"><div class="num">${diffCell(av.a1, t1)} / ${diffCell(av.a2, t2)}</div><div class="lbl">Razlika I1 / I2 (rdeče = premalo)</div></div>`;
+}
+function refreshNeedTotals(){
+  const el = document.getElementById('needs-summary');
+  if (el) el.innerHTML = needsSummaryHtml();
+  state.needs.projects.forEach((pr, i) => {
+    let a = 0, b = 0;
+    pr.rows.forEach(r => { a += needNum(r.s1); b += needNum(r.s2); });
+    const e = document.getElementById('np-tot-' + i);
+    if (e) e.textContent = a + ' / ' + b;
+  });
+}
+
+function renderNeeds(){
+  const app = document.getElementById('app');
+  const projHtml = state.needs.projects.map((pr, pi) => {
+    let a = 0, b = 0;
+    pr.rows.forEach(r => { a += needNum(r.s1); b += needNum(r.s2); });
+    const rows = pr.rows.map((r, ri) => `
+        <div class="need-item">
+        <div class="need-row">
+          <input class="worker-name need-name" value="${escapeAttr(r.name)}" placeholder="Stroj / proces" onchange="setNeedName(${pi},${ri},this.value)">
+          <input class="need-num n1" type="number" min="0" inputmode="numeric" value="${needNum(r.s1)}" oninput="needInput(${pi},${ri},'s1',this.value)" onchange="saveState()" onfocus="this.select()">
+          <input class="need-num n2" type="number" min="0" inputmode="numeric" value="${needNum(r.s2)}" oninput="needInput(${pi},${ri},'s2',this.value)" onchange="saveState()" onfocus="this.select()">
+          <button class="icon-btn no-print" title="Odstrani vrstico" onclick="removeNeedRow(${pi},${ri})">✕</button>
+        </div>
+        <div class="need-calc no-print">
+          <label>norma (min/kos)<input type="number" min="0" step="any" value="${r.norma||''}" placeholder="0" oninput="calcInput(${pi},${ri},'norma',this.value)" onchange="saveState()"></label>
+          <label>kosov I1/dan<input type="number" min="0" step="any" value="${r.k1||''}" placeholder="0" oninput="calcInput(${pi},${ri},'k1',this.value)" onchange="saveState()"></label>
+          <label>kosov I2/dan<input type="number" min="0" step="any" value="${r.k2||''}" placeholder="0" oninput="calcInput(${pi},${ri},'k2',this.value)" onchange="saveState()"></label>
+          <label title="100 % = norma točna. 120 % = dejansko traja 20 % dlje kot norma.">korekcija %<input type="number" min="1" step="any" value="${r.kor||100}" oninput="calcInput(${pi},${ri},'kor',this.value)" onchange="saveState()"></label>
+          <span class="need-sug" id="ns-${pi}-${ri}">${sugHtml(pi,ri)}</span>
+        </div>
+        </div>`).join('');
+    return `
+      <div class="panel need-card">
+        <div class="need-head">
+          <input class="dept-title-name need-proj" value="${escapeAttr(pr.name)}" onchange="setProjectName(${pi}, this.value)">
+          <span class="need-tot"><span id="np-tot-${pi}">${a} / ${b}</span></span>
+          <button class="icon-btn no-print" title="Odstrani projekt" onclick="removeProject(${pi})">✕</button>
+        </div>
+        <div class="need-row need-cols"><span class="need-name">Stroj / proces</span><span class="n1">Izm. 1</span><span class="n2">Izm. 2</span><span class="no-print" style="width:24px"></span></div>
+        ${rows}
+        <button class="add-dept-btn no-print" onclick="addNeedRow(${pi})">+ Dodaj stroj / proces</button>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="plant-tabs no-print plant-tab-bar">${plantTabsMarkup()}</div>
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="kicker">Planiranje</div>
+        <h1>Potrebe po delavcih</h1>
+      </div>
+      <div class="shared-note no-print">
+        Vpiši, koliko delavcev potrebuješ na posameznem stroju v Izmeni 1 in Izmeni 2.
+        <span id="sync-indicator" style="font-weight:700;">${lastCloudError ? '❌ Povezava ni uspela — ' + escapeHtml(lastCloudError) : '☁️ Povezano — zadnja sinhronizacija' + syncTimeText()}</span>
+      </div>
+      <div class="top-controls no-print">
+        <button class="btn" onclick="printPage()">🖨 Natisni</button>
+        <button class="btn" onclick="refreshFromShared(false)" title="Naloži najnovejše spremembe drugih uporabnikov">🔄 Osveži</button>
+        <button class="btn ghost small" onclick="exportBackup()" title="Prenesi varnostno kopijo podatkov">💾 Backup</button>
+        <button class="btn ghost small" onclick="triggerImport()" title="Naloži predhodno varnostno kopijo">📂 Naloži</button>
+        <input type="file" id="import-file-input" accept="application/json" style="display:none" onchange="importBackup(this)">
+      </div>
+    </div>
+
+    <div class="summary" id="needs-summary">${needsSummaryHtml()}</div>
+
+    <div class="panel need-settings no-print">
+      <h3>Izračun po normah</h3>
+      <div class="need-set-row">
+        <label>ur v izmeni<input type="number" min="1" step="any" value="${state.needs.settings.hours}" oninput="setNeedSetting('hours',this.value)" onchange="saveState()"></label>
+        <label>izkoristek %<input type="number" min="1" max="100" step="any" value="${state.needs.settings.eff}" oninput="setNeedSetting('eff',this.value)" onchange="saveState()"></label>
+        <button class="btn small" onclick="applyAllNeeds()">Uporabi vse predloge</button>
+      </div>
+      <div class="need-hint">Pri vsakem stroju vpiši normo (min na kos), kosov na dan po izmeni in korekcijo (če norma ni točna, npr. 120 % = traja 20 % dlje). Predlog = kosi × norma × korekcija / (ure v izmeni × izkoristek). Z gumbom »Uporabi« ga prepišeš v polji Izm. 1 / Izm. 2, ki ju lahko vedno popraviš ročno.</div>
+    </div>
+
+    <div class="need-grid">${projHtml}</div>
+    <button class="add-dept-btn no-print" onclick="addProject()">+ Dodaj projekt</button>
+
+    <div class="print-sign">
+      <div>Vodja proizvodnje</div>
+      <div>Direktor</div>
+    </div>
+  `;
+}
+
+function numF(v){ const n = parseFloat(String(v).replace(',', '.')); return (isNaN(n) || n < 0) ? 0 : n; }
+function calcRaw(r, key){
+  const st = state.needs.settings;
+  const perWorker = numF(st.hours) * numF(st.eff) / 100;       // koristnih ur na delavca v izmeni
+  if (!perWorker || !r.norma) return 0;
+  const kor = numF(r.kor) || 100;
+  return numF(r[key]) * numF(r.norma) * kor / 100 / 60 / perWorker;
+}
+function calcCeil(x){ return x <= 0 ? 0 : Math.ceil(x - 0.05); }
+function sugHtml(pi, ri){
+  const r = state.needs.projects[pi].rows[ri];
+  if (!r.norma || (!r.k1 && !r.k2)) return '<span class="need-hint">vpiši normo in kose za predlog</span>';
+  const a = calcRaw(r, 'k1'), b = calcRaw(r, 'k2');
+  return 'predlog: <b>' + calcCeil(a) + '</b> / <b>' + calcCeil(b) + '</b> <span class="need-hint">(' + a.toFixed(1) + ' / ' + b.toFixed(1) + ')</span> <button class="btn small" onclick="applyNeed(' + pi + ',' + ri + ')">Uporabi</button>';
+}
+function calcInput(pi, ri, key, v){
+  state.needs.projects[pi].rows[ri][key] = numF(v);
+  const e = document.getElementById('ns-' + pi + '-' + ri);
+  if (e) e.innerHTML = sugHtml(pi, ri);
+}
+function setNeedSetting(key, v){
+  state.needs.settings[key] = numF(v) || (key === 'hours' ? 8 : 85);
+  state.needs.projects.forEach((pr, pi) => pr.rows.forEach((r, ri) => {
+    const e = document.getElementById('ns-' + pi + '-' + ri); if (e) e.innerHTML = sugHtml(pi, ri);
+  }));
+}
+function applyNeed(pi, ri){
+  const r = state.needs.projects[pi].rows[ri];
+  r.s1 = calcCeil(calcRaw(r, 'k1')); r.s2 = calcCeil(calcRaw(r, 'k2'));
+  persistAndRender();
+}
+function applyAllNeeds(){
+  if (!confirm('Prepišem predloge v vse vrstice, kjer sta vpisana norma in kosi? Ročno vpisane vrednosti v teh vrsticah bodo zamenjane.')) return;
+  state.needs.projects.forEach(pr => pr.rows.forEach(r => {
+    if (r.norma && (r.k1 || r.k2)){ r.s1 = calcCeil(calcRaw(r, 'k1')); r.s2 = calcCeil(calcRaw(r, 'k2')); }
+  }));
+  persistAndRender();
+}
+
+function setProjectName(pi, v){ state.needs.projects[pi].name = v.trim() || 'Projekt'; saveState(); }
+function setNeedName(pi, ri, v){ state.needs.projects[pi].rows[ri].name = v.trim(); saveState(); }
+function needInput(pi, ri, key, v){
+  state.needs.projects[pi].rows[ri][key] = needNum(v);
+  refreshNeedTotals();
+}
+function addNeedRow(pi){ state.needs.projects[pi].rows.push({ name:'Nov stroj', s1:0, s2:0 }); persistAndRender(); }
+function removeNeedRow(pi, ri){
+  const r = state.needs.projects[pi].rows[ri];
+  if (!confirm('Odstranim vrstico "' + (r.name || '') + '"?')) return;
+  state.needs.projects[pi].rows.splice(ri, 1);
+  persistAndRender();
+}
+function addProject(){ state.needs.projects.push({ name:'Nov projekt', rows:[{ name:'Stroj 1', s1:0, s2:0 }] }); persistAndRender(); }
+function removeProject(pi){
+  if (!confirm('Odstranim celoten projekt "' + state.needs.projects[pi].name + '"?')) return;
+  state.needs.projects.splice(pi, 1);
+  persistAndRender();
+}
+
 // ---- Tisk: samodejna prilagoditev na eno stran A4 (ležeče) ----
 const PRINT_PAGE_W = 283 / 25.4 * 96;   // 297mm - 2*7mm
 const PRINT_PAGE_H = 196 / 25.4 * 96;   // 210mm - 2*7mm
@@ -904,7 +1151,7 @@ function fitToPage(){
     for (let i = 0; i < 14; i++){
       const mid = (lo + hi) / 2;
       root.style.setProperty('--ps', mid);
-      if (wrap.scrollHeight <= PRINT_PAGE_H * 0.96){ best = mid; lo = mid; } else { hi = mid; }
+      if (wrap.scrollHeight <= PRINT_PAGE_H * 0.96 && wrap.scrollWidth <= PRINT_PAGE_W + 1){ best = mid; lo = mid; } else { hi = mid; }
     }
     root.style.setProperty('--ps', best);
     wrap.style.width = prevW;
